@@ -5,10 +5,20 @@ const axios = require('axios');
 require('dotenv').config();
 
 const app = express();
-const port = process.env.PORT || 3000;
 
-app.use(cors()); // ✅ Enable CORS for all origins
-app.use(bodyParser.json());
+// ✅ Use CORS with explicit origin
+const allowedOrigins = ['https://food-client-7yql.onrender.com'];
+app.use(cors({
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  }
+}));
+
+app.use(express.json());
 
 app.post('/send-notification', async (req, res) => {
   const { message } = req.body;
@@ -32,6 +42,7 @@ app.post('/send-notification', async (req, res) => {
   }
 });
 
+const port = process.env.PORT || 3000;
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
 });
