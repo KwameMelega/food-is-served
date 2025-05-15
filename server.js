@@ -2,6 +2,7 @@
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const axios = require('axios');
+const fs = require('fs'); 
 require('dotenv').config();
 
 const app = express();
@@ -67,5 +68,3 @@ app.post("/save-name", (req, res) => {
 app.get("/get-names", (req, res) => {
   res.json(users);
 });
-
-app.listen(process.env.PORT || 3000, () => console.log("Server ready"));
