@@ -1,36 +1,37 @@
-// server.js
-
+﻿const express = require('express');
 const cors = require('cors');
-const express = require('express');
-const axios = require('axios');
 const bodyParser = require('body-parser');
-const app = express();
-app.use(cors());
+const axios = require('axios');
+require('dotenv').config();
 
+const app = express();
+const port = process.env.PORT || 3000;
+
+app.use(cors()); // ✅ Enable CORS for all origins
 app.use(bodyParser.json());
 
-const ONESIGNAL_APP_ID = '0d5ffd40-4afb-44f2-b5f2-5f916e1bd16c';
-const ONESIGNAL_API_KEY = 'imjxipxnneaznwruw6wy6ow5z';
-
 app.post('/send-notification', async (req, res) => {
-    try {
-        await axios.post('https://onesignal.com/api/v1/notifications', {
-            app_id: ONESIGNAL_APP_ID,
-            included_segments: ['All'],
-            headings: { en: "Button Pressed!" },
-            contents: { en: "Someone pressed the button in the Unity app!" },
-        }, {
-            headers: {
-                'Authorization': `Basic ${ONESIGNAL_API_KEY}`,
-                'Content-Type': 'application/json'
-            }
-        });
+  const { message } = req.body;
 
-        res.send('Notification sent!');
-    } catch (error) {
-        console.error(error);
-        res.status(500).send('Failed to send notification.');
-    }
+  try {
+    const response = await axios.post('https://onesignal.com/api/v1/notifications', {
+      app_id: process.env.ONESIGNAL_APP_ID,
+      contents: { en: message || '🍽️ Food is served!' },
+      included_segments: ['All']
+    }, {
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Basic ${process.env.ONESIGNAL_API_KEY}`
+      }
+    });
+
+    res.status(200).json({ success: true, response: response.data });
+  } catch (error) {
+    console.error('Notification failed:', error.response?.data || error.message);
+    res.status(500).json({ success: false, error: error.message });
+  }
 });
 
-app.listen(3000, () => console.log('Server running on port 3000'));
+app.listen(port, () => {
+  console.log(`Server running on port ${port}`);
+});
