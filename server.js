@@ -5,6 +5,7 @@ const axios = require('axios');
 require('dotenv').config();
 
 const app = express();
+let users = {}; // in-memory or read from file
 
 // ✅ Use CORS with explicit origin
 const allowedOrigins = ['https://food-client-7yql.onrender.com'];
@@ -46,3 +47,25 @@ const port = process.env.PORT || 3000;
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
 });
+
+// Load from file if exists
+const dataFile = "users.json";
+if (fs.existsSync(dataFile)) {
+  users = JSON.parse(fs.readFileSync(dataFile));
+}
+
+app.post("/save-name", (req, res) => {
+  const { userId, username } = req.body;
+  if (!userId || !username) return res.status(400).send("Missing data");
+
+  users[userId] = username;
+  fs.writeFileSync(dataFile, JSON.stringify(users));
+  res.send("OK");
+});
+
+// For Unity to fetch all names
+app.get("/get-names", (req, res) => {
+  res.json(users);
+});
+
+app.listen(process.env.PORT || 3000, () => console.log("Server ready"));
