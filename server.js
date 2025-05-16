@@ -3,6 +3,8 @@ const cors = require('cors');
 const bodyParser = require('body-parser');
 const axios = require('axios');
 const fs = require('fs'); 
+console.log('Current directory:', __dirname);
+console.log('Files in ./schedule:', fs.readdirSync(path.join(__dirname, 'schedule')));
 const {
     getSchedule,
     resetSchedule,
@@ -18,6 +20,16 @@ const port = process.env.PORT || 3000;
 app.use(cors());
 
 // WEEK'S MENU CODE SNIPPET
+app.get('/schedule', async (req, res) => {
+    try {
+        const schedule = await getSchedule();
+        res.json(schedule);
+    } catch (err) {
+        console.error('Error in /schedule:', err.message);
+        res.status(500).send('Internal server error');
+    }
+});
+
 // GET /admin/reset - Clears the schedule
 app.get('/admin/reset', async (req, res) => {
     try {
