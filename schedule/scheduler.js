@@ -2,7 +2,7 @@ const fs = require('fs-extra');
 const path = require('path');
 
 const SCHEDULE_PATH = path.join(__dirname, '..', 'data', 'schedule.json');
-const NAMES_PATH = path.join(__dirname, '..', 'config', 'dishNames.json');
+const NAMES_PATH = path.join(__dirname, '..', 'config', 'names.json');
 
 function formatDate(date) {
     return date.toISOString().split('T')[0];
