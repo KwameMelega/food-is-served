@@ -3,22 +3,55 @@ const cors = require('cors');
 const bodyParser = require('body-parser');
 const axios = require('axios');
 const fs = require('fs'); 
+const {
+    getSchedule,
+    resetSchedule,
+    forceRegenerate,
+    getFullSchedule
+} = require('./schedule/scheduler');
 require('dotenv').config();
 
 const app = express();
-let users = {}; // in-memory or read from file
+const port = process.env.PORT || 3000;
 
-// ✅ Use CORS with explicit origin
-const allowedOrigins = ['https://food-client-7yql.onrender.com'];
-app.use(cors({
-  origin: function (origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
+
+app.use(cors());
+
+// WEEK'S MENU CODE SNIPPET
+// GET /admin/reset - Clears the schedule
+app.get('/admin/reset', async (req, res) => {
+    try {
+        await resetSchedule();
+        res.send('Schedule reset.');
+    } catch (err) {
+        console.error('Reset failed:', err.message);
+        res.status(500).send('Reset failed.');
     }
-  }
-}));
+});
+
+// GET /admin/force-generate - Resets and generates fresh schedule
+app.get('/admin/force-generate', async (req, res) => {
+    try {
+        const newSchedule = await forceRegenerate();
+        res.json(newSchedule);
+    } catch (err) {
+        console.error('Force generate failed:', err.message);
+        res.status(500).send('Force generate failed.');
+    }
+});
+
+// GET /admin/raw - Returns raw schedule (all dates)
+app.get('/admin/raw', async (req, res) => {
+    try {
+        const full = await getFullSchedule();
+        res.json(full);
+    } catch (err) {
+        console.error('Raw fetch failed:', err.message);
+        res.status(500).send('Raw fetch failed.');
+    }
+});
+
+let users = {}; // in-memory or read from file
 
 app.use(express.json());
 
@@ -44,11 +77,6 @@ app.post('/send-notification', async (req, res) => {
   }
 });
 
-const port = process.env.PORT || 3000;
-app.listen(port, () => {
-  console.log(`Server running on port ${port}`);
-});
-
 // Load from file if exists
 const dataFile = "users.json";
 if (fs.existsSync(dataFile)) {
@@ -67,4 +95,8 @@ app.post("/save-name", (req, res) => {
 // For Unity to fetch all names
 app.get("/get-names", (req, res) => {
   res.json(users);
+});
+
+app.listen(port, () => {
+  console.log(`Server running on port ${port}`);
 });
