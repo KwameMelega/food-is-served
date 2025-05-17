@@ -8,9 +8,8 @@ console.log('Current directory:', __dirname);
 console.log('Files in ./schedule:', fs.readdirSync(path.join(__dirname, 'schedule')));
 const {
   getSchedule,
-  resetSchedule,
-  forceRegenerate,
-  getFullSchedule
+  ensureScheduleExists,
+  readJSON
 } = require('./schedule/scheduler');
 require('dotenv').config();
 
