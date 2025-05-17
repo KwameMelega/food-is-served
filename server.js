@@ -19,8 +19,11 @@ const port = process.env.PORT || 3000;
 
 
 app.use(cors());
+app.get('/', (req, res) => {
+  res.send('✅ Schedule server is running. Visit /schedule to see the current schedule.');
+});
 
-// WEEK'S MENU CODE SNIPPET
+// WEEK'S  CODE SNIPPET
 app.get('/schedule', (req, res) => {
   try {
     const schedule = getSchedule();
@@ -32,9 +35,9 @@ app.get('/schedule', (req, res) => {
 });
 
 // GET /admin/reset - Clears the schedule
-app.get('/admin/reset', async (req, res) => {
+app.get('/admin/reset', (req, res) => {
   try {
-    await resetSchedule();
+    resetSchedule();
     res.send('Schedule reset.');
   } catch (err) {
     console.error('Reset failed:', err.message);
@@ -43,9 +46,9 @@ app.get('/admin/reset', async (req, res) => {
 });
 
 // GET /admin/force-generate - Resets and generates fresh schedule
-app.get('/admin/force-generate', async (req, res) => {
+app.get('/admin/force-generate', (req, res) => {
   try {
-    const newSchedule = await forceRegenerate();
+    const newSchedule = forceRegenerate();
     res.json(newSchedule);
   } catch (err) {
     console.error('Force generate failed:', err.message);
@@ -54,9 +57,9 @@ app.get('/admin/force-generate', async (req, res) => {
 });
 
 // GET /admin/raw - Returns raw schedule (all dates)
-app.get('/admin/raw', async (req, res) => {
+app.get('/admin/raw', (req, res) => {
   try {
-    const full = await getFullSchedule();
+    const full = getFullSchedule();
     res.json(full);
   } catch (err) {
     console.error('Raw fetch failed:', err.message);
