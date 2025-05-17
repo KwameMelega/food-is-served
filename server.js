@@ -4,10 +4,7 @@ const bodyParser = require('body-parser');
 const axios = require('axios');
 const fs = require('fs');
 const path = require('path');
-console.log('Current directory:', __dirname);
-console.log('Files in ./schedule:', fs.readdirSync(path.join(__dirname, 'schedule')));
 const {
-  getSchedule,
   ensureScheduleExists,
   readJSON
 } = require('./schedule/scheduler');

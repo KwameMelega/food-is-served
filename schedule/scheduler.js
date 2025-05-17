@@ -14,6 +14,12 @@ function loadNames() {
   return JSON.parse(raw);
 }
 
+// Utility to read any JSON file
+function readJSON(filePath) {
+  const raw = fs.readFileSync(filePath, 'utf-8');
+  return JSON.parse(raw);
+}
+
 // Get today as YYYY-MM-DD
 function todayStr(offset = 0) {
   const date = new Date();
@@ -35,35 +41,22 @@ function generateSchedule() {
 
   return schedule;
 }
-// Main function
-function getSchedule() {
-  let schedule = {};
 
-  // If file exists, read it
-  if (fs.existsSync(SCHEDULE_FILE)) {
-    const raw = fs.readFileSync(SCHEDULE_FILE, 'utf-8');
-    schedule = JSON.parse(raw);
+// Ensure schedule.json exists, and optionally regenerate it
+async function ensureScheduleExists(force = false) {
+  const dir = path.dirname(SCHEDULE_FILE);
+
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
   }
 
-  const today = todayStr();
-
-  // If today is missing from schedule, generate new schedule
-  if (!schedule[today]) {
-    schedule = generateSchedule();
-
-    // ✅ Ensure 'data' directory exists (just in case)
-    const dir = path.dirname(SCHEDULE_FILE);
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
-    }
-
+  if (!fs.existsSync(SCHEDULE_FILE) || force) {
+    const schedule = generateSchedule();
     fs.writeFileSync(SCHEDULE_FILE, JSON.stringify(schedule, null, 2));
   }
-
-  return schedule;
 }
 
 module.exports = {
-    getSchedule,
+  ensureScheduleExists,
+  readJSON
 };
-
