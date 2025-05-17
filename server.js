@@ -2,15 +2,15 @@
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const axios = require('axios');
-const fs = require('fs'); 
+const fs = require('fs');
 const path = require('path');
 console.log('Current directory:', __dirname);
 console.log('Files in ./schedule:', fs.readdirSync(path.join(__dirname, 'schedule')));
 const {
-    getSchedule,
-    resetSchedule,
-    forceRegenerate,
-    getFullSchedule
+  getSchedule,
+  resetSchedule,
+  forceRegenerate,
+  getFullSchedule
 } = require('./schedule/scheduler');
 require('dotenv').config();
 
@@ -21,47 +21,47 @@ const port = process.env.PORT || 3000;
 app.use(cors());
 
 // WEEK'S MENU CODE SNIPPET
-app.get('/schedule', async (req, res) => {
-    try {
-        const schedule = await getSchedule();
-        res.json(schedule);
-    } catch (err) {
-        console.error('Error in /schedule:', err.message);
-        res.status(500).send('Internal server error');
-    }
+app.get('/schedule', (req, res) => {
+  try {
+    const schedule = getSchedule();
+    res.json(schedule);
+  } catch (err) {
+    console.error('Schedule error:', err.message);
+    res.status(500).send('Internal server error');
+  }
 });
 
 // GET /admin/reset - Clears the schedule
 app.get('/admin/reset', async (req, res) => {
-    try {
-        await resetSchedule();
-        res.send('Schedule reset.');
-    } catch (err) {
-        console.error('Reset failed:', err.message);
-        res.status(500).send('Reset failed.');
-    }
+  try {
+    await resetSchedule();
+    res.send('Schedule reset.');
+  } catch (err) {
+    console.error('Reset failed:', err.message);
+    res.status(500).send('Reset failed.');
+  }
 });
 
 // GET /admin/force-generate - Resets and generates fresh schedule
 app.get('/admin/force-generate', async (req, res) => {
-    try {
-        const newSchedule = await forceRegenerate();
-        res.json(newSchedule);
-    } catch (err) {
-        console.error('Force generate failed:', err.message);
-        res.status(500).send('Force generate failed.');
-    }
+  try {
+    const newSchedule = await forceRegenerate();
+    res.json(newSchedule);
+  } catch (err) {
+    console.error('Force generate failed:', err.message);
+    res.status(500).send('Force generate failed.');
+  }
 });
 
 // GET /admin/raw - Returns raw schedule (all dates)
 app.get('/admin/raw', async (req, res) => {
-    try {
-        const full = await getFullSchedule();
-        res.json(full);
-    } catch (err) {
-        console.error('Raw fetch failed:', err.message);
-        res.status(500).send('Raw fetch failed.');
-    }
+  try {
+    const full = await getFullSchedule();
+    res.json(full);
+  } catch (err) {
+    console.error('Raw fetch failed:', err.message);
+    res.status(500).send('Raw fetch failed.');
+  }
 });
 
 let users = {}; // in-memory or read from file

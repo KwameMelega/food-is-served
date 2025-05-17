@@ -1,74 +1,59 @@
 const fs = require('fs-extra');
 const path = require('path');
 
-const SCHEDULE_PATH = path.join(__dirname, '..', 'data', 'schedule.json');
-const NAMES_PATH = path.join(__dirname, '..', 'config', 'names.json');
+const SCHEDULE_FILE = path.join(__dirname, '../data/schedule.json');
+const NAMES_FILE = path.join(__dirname, '../config/names.json');
 
-function formatDate(date) {
-    return date.toISOString().split('T')[0];
+// Utility to load names
+function loadNames() {
+  if (!fs.existsSync(NAMES_FILE)) {
+    throw new Error('Names config file missing at ' + NAMES_FILE);
+  }
+
+  const raw = fs.readFileSync(NAMES_FILE, 'utf-8');
+  return JSON.parse(raw);
 }
 
-function getUpcomingDates(days = 7) {
-    const today = new Date();
-    const dates = [];
-    for (let i = 0; i < days; i++) {
-        const d = new Date(today);
-        d.setDate(today.getDate() + i);
-        dates.push(formatDate(d));
-    }
-    return dates;
+// Get today as YYYY-MM-DD
+function todayStr(offset = 0) {
+  const date = new Date();
+  date.setDate(date.getDate() + offset);
+  return date.toISOString().slice(0, 10);
 }
 
-function shuffleArray(array) {
-    const copy = [...array];
-    for (let i = copy.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [copy[i], copy[j]] = [copy[j], copy[i]];
-    }
-    return copy;
+// Generate a new 7-day schedule
+function generateSchedule() {
+  const names = loadNames();
+  if (names.length < 7) throw new Error('Need at least 7 names!');
+
+  const shuffled = names.sort(() => Math.random() - 0.5);
+  const schedule = {};
+
+  for (let i = 0; i < 7; i++) {
+    schedule[todayStr(i)] = shuffled[i];
+  }
+
+  return schedule;
 }
+// Main function
+function getSchedule() {
+  let schedule = {};
 
-async function loadJSON(filePath) {
-    if (!(await fs.pathExists(filePath))) {
-        throw new Error(`Missing file: ${filePath}`);
-    }
-    return await fs.readJson(filePath);
-}
+  // Load existing if it exists
+  if (fs.existsSync(SCHEDULE_FILE)) {
+    const raw = fs.readFileSync(SCHEDULE_FILE, 'utf-8');
+    schedule = JSON.parse(raw);
+  }
 
-async function loadScheduleAndNames() {
-    const schedule = (await fs.pathExists(SCHEDULE_PATH)) ? await fs.readJson(SCHEDULE_PATH) : {};
-    const names = await loadJSON(NAMES_PATH);
-    return { schedule, names };
-}
+  const today = todayStr();
 
-async function saveSchedule(schedule) {
-    await fs.writeJson(SCHEDULE_PATH, schedule, { spaces: 2 });
-}
+  // If today not in schedule, generate new 7-day schedule starting from today
+  if (!schedule[today]) {
+    schedule = generateSchedule();
+    fs.writeFileSync(SCHEDULE_FILE, JSON.stringify(schedule, null, 2));
+  }
 
-async function getSchedule() {
-    const { schedule, names } = await loadScheduleAndNames();
-    const upcomingDates = getUpcomingDates(7);
-    const usedNames = new Set(Object.values(schedule));
-    const unusedNames = names.filter(name => !usedNames.has(name));
-    const availableNames = shuffleArray(unusedNames);
-    const newSchedule = { ...schedule };
-
-    for (const date of upcomingDates) {
-        if (!newSchedule[date]) {
-            const name = availableNames.pop();
-            if (!name) break;
-            newSchedule[date] = name;
-        }
-    }
-
-    await saveSchedule(newSchedule);
-
-    const result = {};
-    for (const date of upcomingDates) {
-        result[date] = newSchedule[date] || null;
-    }
-
-    return result;
+  return schedule;
 }
 
 async function resetSchedule() {
