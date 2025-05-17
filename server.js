@@ -17,8 +17,9 @@ require('dotenv').config();
 const app = express();
 const port = process.env.PORT || 3000;
 
-
+app.use(express.json());
 app.use(cors());
+
 app.get('/', (req, res) => {
   res.send('✅ Schedule server is running. Visit /schedule to see the current schedule.');
 });
@@ -69,8 +70,6 @@ app.get('/admin/raw', (req, res) => {
 
 let users = {}; // in-memory or read from file
 
-app.use(express.json());
-
 app.post('/send-notification', async (req, res) => {
   const { message } = req.body;
 
@@ -90,6 +89,28 @@ app.post('/send-notification', async (req, res) => {
   } catch (error) {
     console.error('Notification failed:', error.response?.data || error.message);
     res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+app.post('/update-schedule', async (req, res) => {
+  try {
+    const { date, name } = req.body;
+
+    if (!date || !name) {
+      return res.status(400).json({ error: 'Missing date or name' });
+    }
+
+    const schedulePath = path.join(__dirname, 'data/schedule.json');
+    const schedule = await readJSON(schedulePath);
+
+    schedule[date] = name;
+
+    await fs.promises.writeFile(schedulePath, JSON.stringify(schedule, null, 2));
+
+    res.json({ success: true, updated: { date, name } });
+  } catch (error) {
+    console.error("Update error:", error);
+    res.status(500).json({ error: 'Failed to update schedule' });
   }
 });
 
