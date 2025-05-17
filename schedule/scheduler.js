@@ -39,7 +39,7 @@ function generateSchedule() {
 function getSchedule() {
   let schedule = {};
 
-  // Load existing if it exists
+  // If file exists, read it
   if (fs.existsSync(SCHEDULE_FILE)) {
     const raw = fs.readFileSync(SCHEDULE_FILE, 'utf-8');
     schedule = JSON.parse(raw);
@@ -47,9 +47,16 @@ function getSchedule() {
 
   const today = todayStr();
 
-  // If today not in schedule, generate new 7-day schedule starting from today
+  // If today is missing from schedule, generate new schedule
   if (!schedule[today]) {
     schedule = generateSchedule();
+
+    // ✅ Ensure 'data' directory exists (just in case)
+    const dir = path.dirname(SCHEDULE_FILE);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+
     fs.writeFileSync(SCHEDULE_FILE, JSON.stringify(schedule, null, 2));
   }
 
