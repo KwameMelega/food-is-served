@@ -105,7 +105,8 @@ app.get("/get-names", (req, res) => {
   res.json(users);
 });
 
-app.listen(PORT, async () => {
-  console.log(`Server running on port ${PORT}`);
+// Start server
+app.listen(port, async () => {
+  console.log(`Server running on port ${port}`);
   await ensureScheduleExists(false); // Only generate schedule if it doesn't already exist
 });
