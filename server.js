@@ -1,4 +1,5 @@
-﻿const express = require('express');
+﻿// server.js
+const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const axios = require('axios');
@@ -13,15 +14,18 @@ require('dotenv').config();
 const app = express();
 const port = process.env.PORT || 3000;
 
+// ✅ Define schedule path here
+const schedulePath = path.join(__dirname, 'data/schedule.json');
+
 app.use(express.json());
 app.use(cors());
 
+// Root endpoint
 app.get('/', (req, res) => {
   res.send('✅ Schedule server is running. Visit /schedule to see the current schedule.');
 });
 
-// WEEK'S  CODE SNIPPET
-// Serve current schedule
+// ✅ Serve current schedule
 app.get('/schedule', async (req, res) => {
   try {
     const data = await fs.promises.readFile(schedulePath, 'utf-8');
@@ -31,10 +35,14 @@ app.get('/schedule', async (req, res) => {
     res.status(500).json({ error: 'Could not load schedule.' });
   }
 });
+
+// ✅ Update a name for a specific date
 app.post('/update-schedule', async (req, res) => {
   try {
     const { date, name } = req.body;
-    if (!date || !name) return res.status(400).json({ error: 'Missing date or name' });
+    if (!date || !name) {
+      return res.status(400).json({ error: 'Missing date or name' });
+    }
 
     const schedule = await readJSON(schedulePath);
     schedule[date] = name;
@@ -42,14 +50,15 @@ app.post('/update-schedule', async (req, res) => {
     await fs.promises.writeFile(schedulePath, JSON.stringify(schedule, null, 2));
     res.json({ success: true, updated: { date, name } });
   } catch (error) {
-    console.error("Update error:", error);
+    console.error('Update error:', error);
     res.status(500).json({ error: 'Failed to update schedule' });
   }
 });
-// Manual route to generate a new schedule
+
+// ✅ Manual route to regenerate schedule
 app.post('/generate-schedule', async (req, res) => {
   try {
-    await ensureScheduleExists(true); // force regen
+    await ensureScheduleExists(true); // force regeneration
     res.json({ success: true, message: 'Schedule regenerated' });
   } catch (err) {
     console.error('Generation error:', err.message);
@@ -57,8 +66,7 @@ app.post('/generate-schedule', async (req, res) => {
   }
 });
 
-let users = {}; // in-memory or read from file
-
+// ✅ OneSignal push notification support
 app.post('/send-notification', async (req, res) => {
   const { message } = req.body;
 
@@ -81,28 +89,8 @@ app.post('/send-notification', async (req, res) => {
   }
 });
 
-// Load from file if exists
-const dataFile = "users.json";
-if (fs.existsSync(dataFile)) {
-  users = JSON.parse(fs.readFileSync(dataFile));
-}
-
-app.post("/save-name", (req, res) => {
-  const { userId, username } = req.body;
-  if (!userId || !username) return res.status(400).send("Missing data");
-
-  users[userId] = username;
-  fs.writeFileSync(dataFile, JSON.stringify(users));
-  res.send("OK");
-});
-
-// For Unity to fetch all names
-app.get("/get-names", (req, res) => {
-  res.json(users);
-});
-
-// Start server
+// ✅ Start the server and conditionally generate schedule
 app.listen(port, async () => {
   console.log(`Server running on port ${port}`);
-  await ensureScheduleExists(false); // Only generate schedule if it doesn't already exist
+  await ensureScheduleExists(false); // only generates schedule if it doesn't exist
 });
