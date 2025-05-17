@@ -63,23 +63,7 @@ function getSchedule() {
   return schedule;
 }
 
-async function resetSchedule() {
-    await fs.writeJson(SCHEDULE_PATH, {}, { spaces: 2 });
-}
-
-async function forceRegenerate() {
-    await resetSchedule();
-    return await getSchedule();
-}
-
-async function getFullSchedule() {
-    return await fs.readJson(SCHEDULE_PATH);
-}
-
 module.exports = {
     getSchedule,
-    resetSchedule,
-    forceRegenerate,
-    getFullSchedule
 };
 

@@ -25,46 +25,39 @@ app.get('/', (req, res) => {
 });
 
 // WEEK'S  CODE SNIPPET
-app.get('/schedule', (req, res) => {
+// Serve current schedule
+app.get('/schedule', async (req, res) => {
   try {
-    const schedule = getSchedule();
-    res.json(schedule);
+    const data = await fs.promises.readFile(schedulePath, 'utf-8');
+    res.send(data);
   } catch (err) {
     console.error('Schedule error:', err.message);
-    res.status(500).send('Internal server error');
+    res.status(500).json({ error: 'Could not load schedule.' });
   }
 });
-
-// GET /admin/reset - Clears the schedule
-app.get('/admin/reset', (req, res) => {
+app.post('/update-schedule', async (req, res) => {
   try {
-    resetSchedule();
-    res.send('Schedule reset.');
-  } catch (err) {
-    console.error('Reset failed:', err.message);
-    res.status(500).send('Reset failed.');
+    const { date, name } = req.body;
+    if (!date || !name) return res.status(400).json({ error: 'Missing date or name' });
+
+    const schedule = await readJSON(schedulePath);
+    schedule[date] = name;
+
+    await fs.promises.writeFile(schedulePath, JSON.stringify(schedule, null, 2));
+    res.json({ success: true, updated: { date, name } });
+  } catch (error) {
+    console.error("Update error:", error);
+    res.status(500).json({ error: 'Failed to update schedule' });
   }
 });
-
-// GET /admin/force-generate - Resets and generates fresh schedule
-app.get('/admin/force-generate', (req, res) => {
+// Manual route to generate a new schedule
+app.post('/generate-schedule', async (req, res) => {
   try {
-    const newSchedule = forceRegenerate();
-    res.json(newSchedule);
+    await ensureScheduleExists(true); // force regen
+    res.json({ success: true, message: 'Schedule regenerated' });
   } catch (err) {
-    console.error('Force generate failed:', err.message);
-    res.status(500).send('Force generate failed.');
-  }
-});
-
-// GET /admin/raw - Returns raw schedule (all dates)
-app.get('/admin/raw', (req, res) => {
-  try {
-    const full = getFullSchedule();
-    res.json(full);
-  } catch (err) {
-    console.error('Raw fetch failed:', err.message);
-    res.status(500).send('Raw fetch failed.');
+    console.error('Generation error:', err.message);
+    res.status(500).json({ error: 'Failed to regenerate schedule' });
   }
 });
 
@@ -92,28 +85,6 @@ app.post('/send-notification', async (req, res) => {
   }
 });
 
-app.post('/update-schedule', async (req, res) => {
-  try {
-    const { date, name } = req.body;
-
-    if (!date || !name) {
-      return res.status(400).json({ error: 'Missing date or name' });
-    }
-
-    const schedulePath = path.join(__dirname, 'data/schedule.json');
-    const schedule = await readJSON(schedulePath);
-
-    schedule[date] = name;
-
-    await fs.promises.writeFile(schedulePath, JSON.stringify(schedule, null, 2));
-
-    res.json({ success: true, updated: { date, name } });
-  } catch (error) {
-    console.error("Update error:", error);
-    res.status(500).json({ error: 'Failed to update schedule' });
-  }
-});
-
 // Load from file if exists
 const dataFile = "users.json";
 if (fs.existsSync(dataFile)) {
@@ -134,6 +105,7 @@ app.get("/get-names", (req, res) => {
   res.json(users);
 });
 
-app.listen(port, () => {
-  console.log(`Server running on port ${port}`);
+app.listen(PORT, async () => {
+  console.log(`Server running on port ${PORT}`);
+  await ensureScheduleExists(false); // Only generate schedule if it doesn't already exist
 });
